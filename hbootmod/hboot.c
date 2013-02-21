@@ -18,6 +18,12 @@
 #define CTRL_DEVNAME "hbootctrl"
 
 static int dev_major;
+
+void v7_flush_kern_cache_all(void);
+void activate_emu_uart(void);
+extern void activate_emu_uart(void);
+
+
 static struct class *dev_class;
 
 /* NOTE: 0x00100000 is mapped per sector, keep that in mind */
@@ -38,6 +44,7 @@ static struct class *dev_class;
 /* We have MMU enabled, so pick the virt. address */
 void reconfigure_emu_uart(uint32_t uart_speed)
 {
+	uint32_t uart_base = 0xD9020000;//UART3
 	uint32_t lcr;
 	uint32_t efr;
 	uint32_t mdr1;
@@ -67,10 +74,18 @@ void reconfigure_emu_uart(uint32_t uart_speed)
 	ier = __raw_readl(MMU_UART3_BASE + 0x04);
 	__raw_writel(0x00, MMU_UART3_BASE + 0x04); /* Disable IRQs */
 
+	__raw_writel(0xBF, MMU_UART3_BASE + 0x0C);
+  	dll = __raw_readl(MMU_UART3_BASE + 0x00);
+   	dlh = __raw_readl(MMU_UART3_BASE + 0x04);
+   	__raw_writel(0x00, MMU_UART3_BASE + 0x00);
+   	__raw_writel(0x00, MMU_UART3_BASE + 0x04);
+
 	__raw_writel(0x80, MMU_UART3_BASE + 0x0C);
-	__raw_writel(0x06, MMU_UART3_BASE + 0x08); /* Disable FIFO */ 
+	__raw_writel(0x06, MMU_UART3_BASE + 0x08); /* Disable FIFO */
+
 
 	__raw_writel(0xBF, MMU_UART3_BASE + 0x0C);
+
 	
 	/* Clock divisor 
 	 *
@@ -225,9 +240,9 @@ int hboot_boot(int handle)
 	}
 		
 	/* Disable preempting */
-	preempt_disable();
+	/*preempt_disable();
 	local_irq_disable();
-	local_fiq_disable();
+	local_fiq_disable();*/
 
 	do_branch(bootlist, listsize, virt_to_phys(l1_table), boot_entry);
 	return -EBUSY;
@@ -347,5 +362,14 @@ int __init hbootmod_init(void)
 	return 0;
 }
 
+void __exit hbootmod_exit(void) {
+	if (dev_major) {
+		buffers_destroy();
+		unregister_chrdev(dev_major, CTRL_DEVNAME);
+	}
+	return;
+}
+
 module_init(hbootmod_init);
+module_exit(hbootmod_exit);
 MODULE_LICENSE("GPL"); 

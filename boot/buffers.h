@@ -37,7 +37,11 @@ struct abstract_buffer
 #define IMG_INITRAMFS    (2)
 #define IMG_DEVTREE      (3)
 #define IMG_CMDLINE      (4)
+#define IMG_USBFW        (5)
+#define IMG_BPLOADER     (6)
+#define IMG_MBM          (7)
+#define IMG_MBMLOADER    (8)
 
-#define IMG_LAST_TAG     IMG_CMDLINE
+#define IMG_LAST_TAG     IMG_MBMLOADER
 
 #endif // __BUFFERS_H__

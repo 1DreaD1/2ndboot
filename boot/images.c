@@ -40,6 +40,21 @@ struct buffer_handle buffers_list[IMG_LAST_TAG+1] =
 		.dest = 0x85100000,
 		.maxsize = 1024,
 	},
+	[IMG_USBFW] = {
+    		//.dest = 0x89310000,
+    		.dest = 0x87000000,
+   		.maxsize = 1 * 1024 * 1024,
+  	},
+  	[IMG_MBM] = {
+    		//.dest = 0x89310000,
+    		.dest = 0x89310000,
+    		.maxsize = 1 * 1024 * 1024,
+  	},
+  	[IMG_MBMLOADER] = {
+    		//.dest = 0x89310000,
+    		.dest = 0x87000000,
+    		.maxsize = 1 * 1024 * 1024,
+  	},
 };
 
 struct memory_image *image_find(uint8_t tag, struct memory_image *dest) 
@@ -73,9 +88,9 @@ struct memory_image *image_unpack(uint8_t tag, struct memory_image *dest)
 	return NULL;
 }
 
-void image_complete() 
+int image_complete() 
 {
-	int i;
+	int i, fail = NULL;
 	struct abstract_buffer *ab;
 
 	for (i = 1; i <= IMG_LAST_TAG; ++i) 
@@ -87,18 +102,54 @@ void image_complete()
 
 		if ((ab->state == B_STAT_COMPLETED) && (ab->attrs & B_ATTR_VERIFY)) 
 		{
-#ifdef HBOOT_VERIFY_CRC32
 			if (ab->checksum != crc32(buffers_list[i].dest, (size_t)ab->size)) 
 			{ 
 				ab->state = B_STAT_CRCERROR;
 				printf("IMAGE [%d]: CRC ERROR\n", i);
+				fail = 1;
 			}
 			else
 				printf("IMAGE [%d]: CRC OK\n", i);
-#else
 			printf("IMAGE [%d]: LOADED\n", i);
-#endif
 		}
 	}
+	return fail;
+}
+
+void image_dump_stats() {
+  int i;
+  struct abstract_buffer *ab;
+  char s[]="xxxx yyyyyyyy zzzzzzzz c\n";
+
+  printf("tag  addr     size\n");
+  for (i = 1; i <= IMG_LAST_TAG; ++i) {
+    int c;
+
+    ab = &buffers_list[i].abstract;
+
+    switch (ab->state) {
+    case B_STAT_NONE:
+      c = '-'; break;
+    case B_STAT_CREATED:
+      c = '*'; break;
+    case B_STAT_COMPLETED:
+      c = '+'; break;
+    case B_STAT_CRCERROR:
+      c = '!'; break;
+    case B_STAT_OVERFLOW:
+      c = '^'; break;
+    case B_STAT_ERROR:
+      c = '#'; break;
+    default:
+      c = '?'; break;
+    }
+
+    u_to_hex(i, 4, s);
+    u_to_hex(buffers_list[i].dest, 8, s+5);
+    u_to_hex(ab->size, 8, s+14);
+    s[23]=c;
+    printf("%s", s);
+
+  }
 }
 

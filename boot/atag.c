@@ -7,6 +7,16 @@
 #include "common.h"
 #include "string.h"
 
+extern void u_to_hex(int x, int digits, char *s);
+
+static void print_hex(int val)
+{
+   char s[]="yyyyyyyy";
+
+   u_to_hex(val, 8, s);
+   printf("%s", s);
+}
+
 void *atag_build() 
 {
 	struct memory_image image;
@@ -45,11 +55,11 @@ void *atag_build()
 	printf("MBM Version: 0x1234\n");
 	tag = tag_next(tag);
 	
-	tag->hdr.tag = ATAG_MBM_LOADER_VERSION;
+	/*tag->hdr.tag = ATAG_MBM_LOADER_VERSION;
 	tag->hdr.size = tag_size(tag_mbm_loader_version);
 	tag->u.mbm_loader_version.mbm_loader_version = 0x1234;
 	printf("MBMLOADER Version: 0x1234\n");
-	tag = tag_next(tag);
+	tag = tag_next(tag);*/
 
 	/* Device tree atag */
 	if (image_find(IMG_DEVTREE, &image) != NULL) 
@@ -60,6 +70,7 @@ void *atag_build()
 		tag->u.flat_dev_tree_address.flat_dev_tree_size = (u32)image.size;
 		tag = tag_next(tag);
 		printf("DEVTREE FOUND!\n");
+		print_hex((u32)image.data);
 	}
 
 	/* Initramfs tag */
@@ -71,6 +82,7 @@ void *atag_build()
 		tag->u.initrd.size = (u32)image.size;
 		tag = tag_next(tag);
 		printf("INITRD FOUND!\n");
+		print_hex((u32)image.data);
 	}
 
 	tag->hdr.tag = ATAG_NONE;

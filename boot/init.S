@@ -301,4 +301,6 @@ __turn_off_mmu:
 	b	__main
 
 .global _start
+.global jump_to_linux
 .global unpack_buffer
+.global caches_flush_lines

@@ -13,6 +13,7 @@ struct memory_image
 
 struct memory_image *image_find(uint8_t tag, struct memory_image *dest);
 struct memory_image *image_unpack(uint8_t tag, struct memory_image *dest);
-void image_complete();
+int image_complete();
+void image_dump_stats();
 
 #endif // __IMAGES_H__
